@@ -1,0 +1,27 @@
+/*
+ * CSS-side mirror of src/map/themes/{light,dark}.ts. These control the UI
+ * chrome (buttons, search bar); the map layer colors live in the TS theme
+ * files. Keep both in sync when the final palette arrives — there are only
+ * two places to edit.
+ */
+:root[data-theme='light'] {
+  --bg: #f4f2ec;
+  --surface: #ffffff;
+  --surface-alpha: rgba(255, 255, 255, 0.92);
+  --text: #1b1d1f;
+  --text-muted: #5b6168;
+  --accent: #2563eb;
+  --border: rgba(0, 0, 0, 0.08);
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme='dark'] {
+  --bg: #0b0f14;
+  --surface: #151a21;
+  --surface-alpha: rgba(21, 26, 33, 0.9);
+  --text: #e8eaed;
+  --text-muted: #9aa4b2;
+  --accent: #5b9bff;
+  --border: rgba(255, 255, 255, 0.1);
+  --shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+}
