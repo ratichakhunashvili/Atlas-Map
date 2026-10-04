@@ -15,7 +15,6 @@ import { addMaskLayer } from '@/map/layers/maskLayer';
 import { addBuildingsLayer, setBuildingsMinZoom } from '@/map/layers/buildingsLayer';
 import { addPoiLayer, setPoiData } from '@/map/layers/poiLayer';
 import { UserLocationLayer } from '@/map/layers/userLocationLayer';
-import { withCappedPixelRatio } from '@/services/performanceService';
 
 /**
  * Owns the Mapbox GL `Map` instance and every map-specific layer/marker.
@@ -44,25 +43,27 @@ export class MapService {
       assertMapboxToken();
       mapboxgl.accessToken = MAPBOX_TOKEN;
 
-      map = withCappedPixelRatio(
-        this.performance.maxDevicePixelRatio,
-        () =>
-          new mapboxgl.Map({
-            container: this.container,
-            style: this.currentTheme.styleUrl,
-            center: GEORGIA_CENTER,
-            zoom: INITIAL_ZOOM,
-            minZoom: MIN_ZOOM,
-            maxZoom: MAX_ZOOM,
-            maxBounds: MAX_BOUNDS,
-            antialias: this.performance.antialias,
-            fadeDuration: this.performance.fadeDuration,
-            renderWorldCopies: false,
-            pitchWithRotate: true,
-            touchPitch: true,
-            attributionControl: false,
-          }),
-      );
+      // Deliberately NOT touching window.devicePixelRatio here. Mapbox GL JS
+      // reads it natively to size the canvas backing store correctly for the
+      // display — overriding it to "save" GPU cost renders a lower-resolution
+      // bitmap that the browser then stretches to the CSS size, which is
+      // exactly what makes high-DPI phones look blurry. Performance is
+      // controlled through scene complexity instead (see performanceService).
+      map = new mapboxgl.Map({
+        container: this.container,
+        style: this.currentTheme.styleUrl,
+        center: GEORGIA_CENTER,
+        zoom: INITIAL_ZOOM,
+        minZoom: MIN_ZOOM,
+        maxZoom: MAX_ZOOM,
+        maxBounds: MAX_BOUNDS,
+        antialias: this.performance.antialias,
+        fadeDuration: this.performance.fadeDuration,
+        renderWorldCopies: false,
+        pitchWithRotate: true,
+        touchPitch: true,
+        attributionControl: false,
+      });
     } catch (error) {
       return Promise.reject(error instanceof Error ? error : new Error('Mapbox failed to initialize'));
     }

@@ -30,6 +30,19 @@ export function detectCapabilities(): PerformanceCapabilities {
   };
 }
 
+/**
+ * Scores actual processing capability (CPU cores, memory, WebGL tier) only.
+ *
+ * Deliberately NOT a factor here: `isMobile` and `devicePixelRatio`. Being a
+ * phone or having a high-density screen says nothing about GPU/CPU power —
+ * a flagship phone with a 3x display is often faster than an old laptop —
+ * and an earlier version of this function used both to justify rendering
+ * the map canvas at a reduced backing resolution on phones. That made every
+ * high-DPI phone blurry (CSS size unchanged, backing bitmap 2-3x smaller,
+ * browser upscales it) for no reliable performance signal in return. Scene
+ * complexity (buildings, POIs, effects) is where the real GPU cost is, so
+ * that's what this profile controls — screen resolution is left alone.
+ */
 export function resolveProfile(caps: PerformanceCapabilities): PerformanceProfile {
   if (caps.webglTier === 0) return 'low';
 
@@ -37,13 +50,11 @@ export function resolveProfile(caps: PerformanceCapabilities): PerformanceProfil
   if (caps.hardwareConcurrency >= 8) score += 2;
   else if (caps.hardwareConcurrency >= 4) score += 1;
 
-  if (caps.deviceMemoryGB === null) score += 1; // unknown (often desktop Safari) — assume capable
+  if (caps.deviceMemoryGB === null) score += 1; // unknown (often desktop Safari/iOS) — assume capable
   else if (caps.deviceMemoryGB >= 8) score += 2;
   else if (caps.deviceMemoryGB >= 4) score += 1;
 
   if (caps.webglTier === 2) score += 1;
-  if (caps.isMobile) score -= 1;
-  if (caps.devicePixelRatio > 2.5) score -= 1;
 
   if (score <= 1) return 'low';
   if (score <= 3) return 'medium';
@@ -53,7 +64,6 @@ export function resolveProfile(caps: PerformanceCapabilities): PerformanceProfil
 const PROFILE_SETTINGS: Record<PerformanceProfile, PerformanceSettings> = {
   low: {
     profile: 'low',
-    maxDevicePixelRatio: 1,
     buildingsMinZoom: BUILDINGS_BASE_MIN_ZOOM + 1.5,
     poiMinZoom: POI_MIN_ZOOM + 1,
     poiLimit: 20,
@@ -62,7 +72,6 @@ const PROFILE_SETTINGS: Record<PerformanceProfile, PerformanceSettings> = {
   },
   medium: {
     profile: 'medium',
-    maxDevicePixelRatio: 1.5,
     buildingsMinZoom: BUILDINGS_BASE_MIN_ZOOM,
     poiMinZoom: POI_MIN_ZOOM,
     poiLimit: 50,
@@ -71,7 +80,6 @@ const PROFILE_SETTINGS: Record<PerformanceProfile, PerformanceSettings> = {
   },
   high: {
     profile: 'high',
-    maxDevicePixelRatio: 2,
     buildingsMinZoom: BUILDINGS_BASE_MIN_ZOOM - 0.5,
     poiMinZoom: POI_MIN_ZOOM,
     poiLimit: 50,
@@ -84,30 +92,4 @@ export function getPerformanceSettings(): PerformanceSettings {
   const caps = detectCapabilities();
   const profile = resolveProfile(caps);
   return PROFILE_SETTINGS[profile];
-}
-
-/**
- * Mapbox GL JS reads `window.devicePixelRatio` when the canvas is created.
- * On weak GPUs a 3x retina canvas is a real cost, so we temporarily cap the
- * reported ratio while the map is constructed, then restore it.
- */
-export function withCappedPixelRatio<T>(maxRatio: number, fn: () => T): T {
-  const real = window.devicePixelRatio;
-  if (real <= maxRatio) return fn();
-
-  const descriptor = Object.getOwnPropertyDescriptor(window, 'devicePixelRatio');
-  Object.defineProperty(window, 'devicePixelRatio', {
-    configurable: true,
-    get: () => maxRatio,
-  });
-
-  try {
-    return fn();
-  } finally {
-    if (descriptor) {
-      Object.defineProperty(window, 'devicePixelRatio', descriptor);
-    } else {
-      delete (window as unknown as Record<string, unknown>).devicePixelRatio;
-    }
-  }
 }

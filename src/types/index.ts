@@ -33,7 +33,6 @@ export interface PerformanceCapabilities {
 
 export interface PerformanceSettings {
   profile: PerformanceProfile;
-  maxDevicePixelRatio: number;
   buildingsMinZoom: number;
   poiMinZoom: number;
   poiLimit: number;
