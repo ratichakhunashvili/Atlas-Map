@@ -42,10 +42,16 @@ function toPoiFeature(feature: TilequeryFeature): PoiFeature {
   const name = feature.properties.name_en || feature.properties.name || feature.properties.class || 'Unnamed';
   const maki = feature.properties.maki ?? '';
 
+  // `properties.id` is promoted to the feature's identity via the source's
+  // `promoteId: 'id'` (see poiLayer.ts) — stable across setData() refreshes,
+  // so the same real-world POI keeps the same feature-state identity even
+  // after a later fetch rebuilds the array.
+  const id = `${name}-${lng.toFixed(5)}-${lat.toFixed(5)}`;
+
   return {
     type: 'Feature',
     properties: {
-      id: `${name}-${lng.toFixed(5)}-${lat.toFixed(5)}`,
+      id,
       name,
       category: categoryForMaki(maki),
       maki,

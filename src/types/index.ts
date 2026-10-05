@@ -97,3 +97,15 @@ export interface SearchResult {
 export interface MapServiceEvents {
   onStyleReady?: () => void;
 }
+
+/** '2d' = flat/top-down camera, '3d' = pitched/tilted — drives whether a selected POI grows or just highlights. */
+export type SelectionMode = '2d' | '3d';
+
+export interface SelectedPoi {
+  id: string;
+  properties: PoiProperties;
+}
+
+export interface SelectionState {
+  feature: SelectedPoi | null;
+}

@@ -28,6 +28,12 @@ export const LOCATION_MARKER_THRESHOLD_M = 12;
 
 export const SEARCH_DEBOUNCE_MS = 250;
 
+/** How much a selected POI's circle grows in 3D (pitched) mode. 1.12 = +12%. */
+export const SELECTION_GROW_FACTOR = 1.12;
+
+/** Duration of the selection grow/shrink + highlight transition. Mapbox interpolates this natively via paint-property transitions — no JS animation loop involved. */
+export const SELECTION_TRANSITION_MS = 220;
+
 export const GEORGIA_COUNTRY_CODE = 'ge';
 
 export function assertMapboxToken(): void {

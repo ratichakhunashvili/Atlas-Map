@@ -7,10 +7,13 @@ import { themeService } from '@/services/themeService';
 import { locationService } from '@/services/locationService';
 import { searchService } from '@/services/searchService';
 import { attachPoiDiscovery } from '@/app/poiDiscovery';
+import { attachPoiSelection } from '@/app/poiSelection';
+import { selectionService } from '@/services/selectionService';
 import { createLocateMeControl } from '@/components/controls/locateMeControl';
 import { createThemeToggleControl } from '@/components/controls/themeToggleControl';
 import { createSearchControl } from '@/components/controls/searchControl';
 import { createStatusIndicator } from '@/components/controls/statusIndicator';
+import { createInfoPanel } from '@/components/controls/infoPanel';
 import { mountControlsPanel } from '@/components/controls/controlsPanel';
 
 const appEl = document.getElementById('app') as HTMLElement;
@@ -65,17 +68,24 @@ async function bootstrap(): Promise<void> {
     },
   });
 
+  const infoPanel = createInfoPanel();
+
   mountControlsPanel(appEl, {
     search: searchControl.element,
     locate: locateControl.element,
     themeToggle: themeToggle.element,
     statusText: statusIndicator.element,
   });
+  appEl.appendChild(infoPanel.element);
 
   // ---- theme wiring ----
   themeService.onChange((theme) => {
     document.documentElement.dataset.theme = theme;
     themeToggle.setTheme(theme);
+    // Switching style tears down and rebuilds the POI source/layers, so any
+    // selected feature-state would be orphaned anyway — clear it cleanly
+    // instead of leaving a stale info panel open for a marker that's gone.
+    selectionService.deselect();
     mapService.setMapTheme(theme);
   });
 
@@ -92,6 +102,9 @@ async function bootstrap(): Promise<void> {
 
   // ---- nearby POI discovery ----
   attachPoiDiscovery(map, mapService, performanceSettings);
+
+  // ---- POI selection (click/tap to grow in 3D or highlight in 2D) ----
+  attachPoiSelection(map);
 }
 
 bootstrap().catch((error: unknown) => {
